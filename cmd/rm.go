@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Create the pull command
+// Create the rm command
 var cmdRemove = &cobra.Command{
 	Use:   "rm",
 	Short: "Remove a Swif workflow",

@@ -30,5 +30,5 @@
     "stdout": "file:/volatile/halld/home/nsparks/ana/log/stdout/[jobID]",
     "stderr": "file:/volatile/halld/home/nsparks/ana/log/stderr/[jobID]",
     "shell": "/bin/bash",
-    "command": "script.sh [inputDir] [jobID]"
+    "command": "script.sh [input] [jobID]"
 }

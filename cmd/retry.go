@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Create the pull command
+// Create the retry command
 var cmdRetry = &cobra.Command{
 	Use:   "retry",
 	Short: "Retry problem jobs",

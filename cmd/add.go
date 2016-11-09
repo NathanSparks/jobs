@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Create the build command
+// Create the add command
 var cmdAdd = &cobra.Command{
 	Use:   "add CONFIG_FILE",
 	Short: "Add jobs to a Swif workflow",
@@ -64,7 +64,19 @@ func runAdd(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	dirNoByFile := make(map[string]int)
+	if c.JobPerDir && strings.HasPrefix(c.InputDir, "/mss/") {
+		fmt.Fprintln(os.Stderr, `One-job per directory mode is not supported for tape-library input.
+The input files need to be precached or in a local directory.`)
+		os.Exit(2)
+	}
+
+	type fileInfo struct {
+		dirNo int
+		path  string
+	}
+
+	var files []fileInfo
+	Ndirs, Nfiles := 0, 0
 	for dirNo := c.DirNoMin; dirNo <= c.DirNoMax; dirNo++ {
 		dirNo_str := toString(dirNo, c.DirNoDigits)
 		if c.DirNoList != "" && !in(inputList, dirNo_str) {
@@ -80,8 +92,12 @@ func runAdd(cmd *cobra.Command, args []string) {
 				if strings.HasPrefix(file, c.InputFilePrefix) &&
 					strings.HasSuffix(file, c.InputFileSuffix) &&
 					fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
-					dirNoByFile[dir+"/"+file] = dirNo
+					files = append(files, fileInfo{dirNo, dir + "/" + file})
 					fileNo++
+					if fileNo == 1 {
+						Ndirs++
+					}
+					Nfiles++
 				}
 			}
 		}
@@ -99,19 +115,13 @@ func runAdd(cmd *cobra.Command, args []string) {
 	}
 	c0 := c
 
-	Ndirs, Nfiles, prevDirNo := 0, 0, -1
-	for f, d := range dirNoByFile {
-		floc := filepath.Base(f)
+	for _, file := range files {
+		floc := filepath.Base(file.path)
 		fid := strings.TrimPrefix(floc, c.InputFilePrefix)
 		fid = strings.TrimSuffix(fid, c.InputFileSuffix)
 
-		ds := toString(d, c.DirNoDigits)
+		ds := toString(file.dirNo, c.DirNoDigits)
 
-		if d != prevDirNo {
-			Ndirs++
-		}
-		prevDirNo = d
-		Nfiles++
 		if c.JobPerDir {
 			fid = ds
 		}
@@ -119,7 +129,7 @@ func runAdd(cmd *cobra.Command, args []string) {
 
 		inputArg := ""
 		if !c.JobPerDir {
-			inputArg = "-input " + floc + " " + idp + f
+			inputArg = "-input " + floc + " " + idp + file.path
 		}
 		for _, input := range c.Inputs {
 			if inputArg == "" {
@@ -156,7 +166,7 @@ func runAdd(cmd *cobra.Command, args []string) {
 		fmt.Println("No jobs to submit.")
 		os.Exit(0)
 	}
-	fmt.Printf("\n%d directories with input files were found:\nAverage of %v jobs/directory.\n", Ndirs, float32(Nfiles)/float32(Ndirs))
+	fmt.Printf("\n%d directories with input files were found.\nAverage of %v jobs/directory to submit.\n", Ndirs, float32(Nfiles)/float32(Ndirs))
 
 	if submit {
 		fmt.Printf("Submitting %s workflow ...\n", c.Workflow)

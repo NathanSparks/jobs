@@ -60,16 +60,24 @@ func (c Config) config(d, id string) Config {
 	c.Name = strings.Replace(c.Name, "[jobID]", id, -1)
 	var inputs, outputs []string
 	for _, input := range c.Inputs {
+		input = strings.Replace(input, "[dirNo]", d, -1)
 		inputs = append(inputs, strings.Replace(input, "[jobID]", id, -1))
 	}
 	c.Inputs = inputs
 	for _, output := range c.Outputs {
+		if !c.JobPerDir {
+			output = strings.Replace(output, "[dirNo]", d, -1)
+		}
 		outputs = append(outputs, strings.Replace(output, "[jobID]", id, -1))
 	}
 	c.Outputs = outputs
 	c.Stdout = strings.Replace(c.Stdout, "[jobID]", id, -1)
 	c.Stderr = strings.Replace(c.Stderr, "[jobID]", id, -1)
-	c.Command = strings.Replace(c.Command, "[inputDir]", c.InputDir, 1)
+	input := c.InputFilePrefix + id + c.InputFileSuffix
+	if c.JobPerDir {
+		input = c.InputDir
+	}
+	c.Command = strings.Replace(c.Command, "[input]", input, -1)
 	c.Command = strings.Replace(c.Command, "[jobID]", id, -1)
 	return c
 }
