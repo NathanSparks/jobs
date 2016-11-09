@@ -1,9 +1,9 @@
 #!/bin/bash
-ENVIRONMENT=${1}
-INDIR=${2}
-RUNNO=${3}
 
-source $ENVIRONMENT
+INPUTDIR=${1}
+RUNNO=${2}
+
+source master.sh
 
 echo pwd = $PWD
 echo
@@ -12,6 +12,6 @@ echo
 echo PATH = $PATH
 echo
 
-cp -R ${INDIR} .
+cp -R ${INPUTDIR} .
 mv ${RUNNO} data
 root -b -q run.C

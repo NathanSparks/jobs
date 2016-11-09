@@ -1,0 +1,34 @@
+{
+    "jobPerDir": true,
+    "inputDir": "/cache/halld/RunPeriod-2016-02/analysis/ver01/tree_etaeta_nas/[dirNo]",
+    "inputFilePrefix": "tree_etaeta_nas_",
+    "inputFileSuffix": ".root",
+    "dirNoList": "",
+    "dirNoDigits": "6",
+    "dirNoMin": 10391,
+    "dirNoMax": 10394,
+    "fileNoMin": 0,
+    "fileNoMax": 0,
+    "workflow": "etaeta",
+    "project": "gluex",
+    "track": "analysis",
+    "name": "etaeta-[jobID]",
+    "cores": "4",
+    "disk": "4g",
+    "ram": "3g",
+    "time": "30m",
+    "os": "centos65",
+    "inputs": [
+        "master.sh file:/work/halld/nsparks/jobs/dselector/master.sh",
+        "run.C file:/work/halld/nsparks/jobs/dselector/run.C",
+        "DSelector_etaeta.C file:/work/halld/nsparks/jobs/dselector/DSelector_etaeta.C",
+        "DSelector_etaeta.h file:/work/halld/nsparks/jobs/dselector/DSelector_etaeta.h"
+    ],
+    "outputs": [
+        "etaeta.root file:/volatile/halld/home/nsparks/ana/etaeta2/etaeta_[jobID].root"
+    ],
+    "stdout": "file:/volatile/halld/home/nsparks/ana/log/stdout/[jobID]",
+    "stderr": "file:/volatile/halld/home/nsparks/ana/log/stderr/[jobID]",
+    "shell": "/bin/bash",
+    "command": "script.sh [inputDir] [jobID]"
+}
