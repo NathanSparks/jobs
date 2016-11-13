@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -39,7 +38,7 @@ func init() {
 
 func runAdd(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprint(os.Stderr, "Pass JSON config file as only argument.\n")
+		fmt.Fprint(os.Stderr, "Pass a JSON config file as the only argument.\n")
 		os.Exit(2)
 	}
 
@@ -64,45 +63,6 @@ func runAdd(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if c.JobPerDir && strings.HasPrefix(c.InputDir, "/mss/") {
-		fmt.Fprintln(os.Stderr, `One-job per directory mode is not supported for tape-library input.
-The input files need to be precached or in a local directory.`)
-		os.Exit(2)
-	}
-
-	type fileInfo struct {
-		dirNo int
-		path  string
-	}
-
-	var files []fileInfo
-	Ndirs, Nfiles := 0, 0
-	for dirNo := c.DirNoMin; dirNo <= c.DirNoMax; dirNo++ {
-		dirNo_str := toString(dirNo, c.DirNoDigits)
-		if c.DirNoList != "" && !in(inputList, dirNo_str) {
-			continue
-		}
-		dir := c.InputDir
-		if strings.Contains(dir, "[dirNo]") {
-			dir = strings.Replace(dir, "[dirNo]", dirNo_str, -1)
-		}
-		if isPath(dir) {
-			fileNo := 0
-			for _, file := range readDir(dir) {
-				if strings.HasPrefix(file, c.InputFilePrefix) &&
-					strings.HasSuffix(file, c.InputFileSuffix) &&
-					fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
-					files = append(files, fileInfo{dirNo, dir + "/" + file})
-					fileNo++
-					if fileNo == 1 {
-						Ndirs++
-					}
-					Nfiles++
-				}
-			}
-		}
-	}
-
 	if dryRun {
 		fmt.Printf("Dry run: No jobs will be added to %s workflow.\n\n", c.Workflow)
 	} else {
@@ -115,62 +75,121 @@ The input files need to be precached or in a local directory.`)
 	}
 	c0 := c
 
-	for _, file := range files {
-		floc := filepath.Base(file.path)
-		fid := strings.TrimPrefix(floc, c.InputFilePrefix)
-		fid = strings.TrimSuffix(fid, c.InputFileSuffix)
-
-		ds := toString(file.dirNo, c.DirNoDigits)
-
-		if c.JobPerDir {
-			fid = ds
-		}
-		c = c0.config(ds, fid)
-
-		inputArg := ""
-		if !c.JobPerDir {
-			inputArg = "-input " + floc + " " + idp + file.path
-		}
-		for _, input := range c.Inputs {
-			if inputArg == "" {
-				inputArg = "-input " + input
-			} else {
-				inputArg = inputArg + " -input " + input
+	Ndirs, Nfiles := 0, 0
+	switch c.JobPerDir {
+	case false:
+		for dirNo := c.DirNoMin; dirNo <= c.DirNoMax; dirNo++ {
+			dirNo_str := toString(dirNo, c.DirNoDigits)
+			if c.DirNoList != "" && !in(inputList, dirNo_str) {
+				continue
+			}
+			c.InputDir = strings.Replace(c0.InputDir, "[dirNo]", dirNo_str, -1)
+			fileNo := 0
+			for _, file := range readDir(c.InputDir) {
+				if strings.HasPrefix(file, c.InputFilePrefix) &&
+					strings.HasSuffix(file, c.InputFileSuffix) &&
+					fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
+					c.addJob(dirNo, file, idp)
+					fileNo++
+					if fileNo == 1 {
+						Ndirs++
+					}
+					Nfiles++
+				}
 			}
 		}
-		outputArg := ""
-		for _, output := range c.Outputs {
-			if outputArg == "" {
-				outputArg = "-output " + output
-			} else {
-				outputArg = outputArg + " -output " + output
+	case true:
+		for dirNo := c.DirNoMin; dirNo <= c.DirNoMax; dirNo++ {
+			dirNo_str := toString(dirNo, c.DirNoDigits)
+			if c.DirNoList != "" && !in(inputList, dirNo_str) {
+				continue
 			}
-		}
-
-		args := "add-job -create -workflow " + c.Workflow + " -project " + c.Project +
-			" -track " + c.Track + " -cores " + c.Cores + " -disk " + c.Disk + " -ram " + c.RAM +
-			" -time " + c.Time + " -os " + c.OS + " " + inputArg + " " + outputArg + " -stdout " +
-			c.Stdout + " -stderr " + c.Stderr + " -name " + c.Name + " " + c.Command
-
-		if dryRun {
-			fmt.Println("swif " + args + "\n")
-		} else {
-			run("swif", args)
+			c.InputDir = strings.Replace(c0.InputDir, "[dirNo]", dirNo_str, -1)
+			fileNo := 0
+			inputArg, f0 := "", ""
+			for _, file := range readDir(c.InputDir) {
+				if strings.HasPrefix(file, c.InputFilePrefix) &&
+					strings.HasSuffix(file, c.InputFileSuffix) &&
+					fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
+					fileNo++
+					if fileNo == 1 {
+						Ndirs++
+						inputArg = "-input " + file + " " + idp + c.InputDir + "/" + file
+						f0 = file
+					} else {
+						inputArg = inputArg + " -input " + file + " " + idp + c.InputDir + "/" + file
+					}
+					Nfiles++
+				}
+			}
+			if fileNo == 0 {
+				continue
+			}
+			c.addJob(dirNo, f0, inputArg)
 		}
 	}
 
 	if !dryRun {
-		fmt.Printf("%d jobs added.\n", Nfiles)
+		fmt.Printf("%d input files were found.\n", Nfiles)
 	}
 	if Ndirs == 0 {
 		fmt.Println("No jobs to submit.")
 		os.Exit(0)
 	}
-	fmt.Printf("\n%d directories with input files were found.\nAverage of %v jobs/directory to submit.\n", Ndirs, float32(Nfiles)/float32(Ndirs))
+	Njobs := Nfiles
+	if c.JobPerDir {
+		Njobs = Ndirs
+	}
+	fmt.Printf("\n%d directories with input files were found.\nAverage of %v jobs/directory to submit.\n", Ndirs, float32(Njobs)/float32(Ndirs))
 
 	if submit {
 		fmt.Printf("Submitting %s workflow ...\n", c.Workflow)
 		run("swif", "run", "-workflow "+workflow)
+	}
+}
+
+func (c Config) addJob(dirNo int, file, idp string) {
+	fid := strings.TrimPrefix(file, c.InputFilePrefix)
+	fid = strings.TrimSuffix(fid, c.InputFileSuffix)
+
+	ds := toString(dirNo, c.DirNoDigits)
+
+	if c.JobPerDir {
+		fid = ds
+	}
+	c.config(ds, fid)
+
+	inputArg := ""
+	if !c.JobPerDir {
+		inputArg = "-input " + file + " " + idp + c.InputDir + "/" + file
+	} else {
+		inputArg = idp
+	}
+	for _, input := range c.Inputs {
+		if inputArg == "" {
+			inputArg = "-input " + input
+		} else {
+			inputArg = inputArg + " -input " + input
+		}
+	}
+	outputArg := ""
+	for _, output := range c.Outputs {
+		if outputArg == "" {
+			outputArg = "-output " + output
+		} else {
+			outputArg = outputArg + " -output " + output
+		}
+	}
+
+	args := "add-job -create -workflow " + c.Workflow + " -project " + c.Project +
+		" -track " + c.Track + " -cores " + c.Cores + " -disk " + c.Disk + " -ram " + c.RAM +
+		" -time " + c.Time + " -os " + c.OS + " " + inputArg + " " + outputArg + " -stdout " +
+		c.Stdout + " -stderr " + c.Stderr + " -name " + c.Name + " " + c.Command
+
+	if dryRun {
+		fmt.Println("swif " + args + "\n")
+	} else {
+		run("swif", args)
 	}
 }
 

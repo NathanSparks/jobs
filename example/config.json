@@ -1,6 +1,6 @@
 {
     "jobPerDir": true,
-    "inputDir": "/cache/halld/RunPeriod-2016-02/analysis/ver01/tree_etaeta_nas/[dirNo]",
+    "inputDir": "/mss/halld/RunPeriod-2016-02/analysis/ver01/tree_etaeta_nas/[dirNo]",
     "inputFilePrefix": "tree_etaeta_nas_",
     "inputFileSuffix": ".root",
     "dirNoList": "",
@@ -8,7 +8,7 @@
     "dirNoMin": 10391,
     "dirNoMax": 10394,
     "fileNoMin": 0,
-    "fileNoMax": 0,
+    "fileNoMax": 300,
     "workflow": "etaeta",
     "project": "gluex",
     "track": "analysis",

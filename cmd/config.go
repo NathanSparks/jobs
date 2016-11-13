@@ -50,13 +50,9 @@ func (c *Config) read(path string) {
 		c.Command = filepath.Dir(path) + "/" + c.Command
 	}
 	c.Command = c.Shell + " " + c.Command
-	if c.JobPerDir {
-		c.FileNoMin, c.FileNoMax = 0, 0
-	}
 }
 
-func (c Config) config(d, id string) Config {
-	c.InputDir = strings.Replace(c.InputDir, "[dirNo]", d, -1)
+func (c *Config) config(d, id string) {
 	c.Name = strings.Replace(c.Name, "[jobID]", id, -1)
 	var inputs, outputs []string
 	for _, input := range c.Inputs {
@@ -79,5 +75,4 @@ func (c Config) config(d, id string) Config {
 	}
 	c.Command = strings.Replace(c.Command, "[input]", input, -1)
 	c.Command = strings.Replace(c.Command, "[jobID]", id, -1)
-	return c
 }

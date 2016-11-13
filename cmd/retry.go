@@ -31,7 +31,7 @@ func init() {
 
 func runRetry(cmd *cobra.Command, args []string) {
 	if workflow == "" {
-		fmt.Fprint(os.Stderr, "Please specify Swif workflow to act on.\n")
+		fmt.Fprint(os.Stderr, "Please specify a Swif workflow to act on.\n")
 		os.Exit(2)
 	}
 	if problems == "" {
