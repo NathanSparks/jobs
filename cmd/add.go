@@ -11,41 +11,54 @@ import (
 
 // Create the add command
 var cmdAdd = &cobra.Command{
-	Use:   "add CONFIG_FILE",
-	Short: "Add jobs to a Swif workflow",
-	Long: `Add jobs to a Swif workflow.
+	Use:   "add [WORKFLOW]",
+	Short: "Add jobs to or create a workflow",
+	Long: `Add jobs to or create a Swif workflow.
 
 The workflow is created if it does not already exist.
 
-Pass a JSON config file as the only argument.
+A JSON config file is used to configure the workflow.
 
 job tracks: debug, analysis, reconstruction, one_pass, simulation
 
-Usage example:
-sw add config.json
+Usage examples:
+1. Create a new blank workflow called sim100.
+    sw add sim100
+2. Add jobs to a workflow with JSON configuration file.
+    sw add -c config.json
 `,
 	Run: runAdd,
 }
 
-var dryRun, submit bool
+var dryRun, start bool
+var config_file string
 
 func init() {
 	cmdSW.AddCommand(cmdAdd)
 
+	cmdAdd.Flags().StringVarP(&config_file, "config", "c", "", "Path to JSON configuration file")
 	cmdAdd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Print job commands and exit")
-	cmdAdd.Flags().BoolVarP(&submit, "submit", "s", false, "Submit the Swif workflow after adding jobs")
+	cmdAdd.Flags().BoolVarP(&start, "start", "s", false, "Start the workflow after adding jobs")
 }
 
 func runAdd(cmd *cobra.Command, args []string) {
-	if len(args) != 1 {
-		fmt.Fprint(os.Stderr, "Pass a JSON config file as the only argument.\n")
+	if len(args) == 0 && config_file == "" {
+		fmt.Fprintln(os.Stderr, `"sw add" requires a workflow as an argument and/or the "-c" option.
+Run "sw help add" for usage details.`)
+		os.Exit(2)
+	}
+	if len(args) > 0 && config_file == "" {
+		run("swif", "create", "-workflow "+args[0])
+		return
+	}
+	if config_file == "" {
+		fmt.Fprintln(os.Stderr, `Please use the "-c" option to specify the JSON config file.
+Run "sw help add" for usage details.`)
 		os.Exit(2)
 	}
 
-	wd := workDir()
-
 	var c Config
-	path := wd + "/" + args[0]
+	path := config_file
 	if isPath(path) {
 		c.read(path)
 	} else {
@@ -53,10 +66,14 @@ func runAdd(cmd *cobra.Command, args []string) {
 		os.Exit(2)
 	}
 
-	var inputList []string
+	if len(args) > 0 {
+		c.Workflow = args[0]
+	}
+
+	var dirNoList []string
 	if c.DirNoList != "" {
 		if isPath(c.DirNoList) {
-			inputList = strings.Split(readFile(c.DirNoList), "\n")
+			dirNoList = strings.Split(readFile(c.DirNoList), "\n")
 		} else {
 			fmt.Fprintf(os.Stderr, "Path to directory-number list does not exist:\n%s\n", c.DirNoList)
 			os.Exit(2)
@@ -80,7 +97,7 @@ func runAdd(cmd *cobra.Command, args []string) {
 	case false:
 		for dirNo := c.DirNoMin; dirNo <= c.DirNoMax; dirNo++ {
 			dirNo_str := toString(dirNo, c.DirNoDigits)
-			if c.DirNoList != "" && !in(inputList, dirNo_str) {
+			if c.DirNoList != "" && !in(dirNoList, dirNo_str) {
 				continue
 			}
 			c.InputDir = strings.Replace(c0.InputDir, "[dirNo]", dirNo_str, -1)
@@ -101,7 +118,7 @@ func runAdd(cmd *cobra.Command, args []string) {
 	case true:
 		for dirNo := c.DirNoMin; dirNo <= c.DirNoMax; dirNo++ {
 			dirNo_str := toString(dirNo, c.DirNoDigits)
-			if c.DirNoList != "" && !in(inputList, dirNo_str) {
+			if c.DirNoList != "" && !in(dirNoList, dirNo_str) {
 				continue
 			}
 			c.InputDir = strings.Replace(c0.InputDir, "[dirNo]", dirNo_str, -1)
@@ -133,18 +150,18 @@ func runAdd(cmd *cobra.Command, args []string) {
 		fmt.Printf("%d input files were found.\n", Nfiles)
 	}
 	if Ndirs == 0 {
-		fmt.Println("No jobs to submit.")
+		fmt.Println("No jobs to add.")
 		os.Exit(0)
 	}
 	Njobs := Nfiles
 	if c.JobPerDir {
 		Njobs = Ndirs
 	}
-	fmt.Printf("\n%d directories with input files were found.\nAverage of %v jobs/directory to submit.\n", Ndirs, float32(Njobs)/float32(Ndirs))
+	fmt.Printf("\n%d directories with input files were found.\nAverage of %v jobs/directory to add.\n", Ndirs, float32(Njobs)/float32(Ndirs))
 
-	if submit {
-		fmt.Printf("Submitting %s workflow ...\n", c.Workflow)
-		run("swif", "run", "-workflow "+workflow)
+	if !dryRun && start {
+		fmt.Printf("Starting %s workflow ...\n", c.Workflow)
+		run("swif", "run", "-workflow "+c.Workflow)
 	}
 }
 

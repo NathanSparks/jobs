@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"path/filepath"
 	"strings"
 )
 
@@ -20,9 +19,11 @@ type Config struct {
 	FileNoMin       int      `json:"fileNoMin"`
 	FileNoMax       int      `json:"fileNoMax"`
 	Workflow        string   `json:"workflow"`
+	Phase           string   `json:"phase"`
 	Project         string   `json:"project"`
 	Track           string   `json:"track"`
 	Name            string   `json:"name"`
+	Tags            []string `json:"tags"`
 	Cores           string   `json:"cores"`
 	Disk            string   `json:"disk"`
 	RAM             string   `json:"ram"`
@@ -46,8 +47,9 @@ func (c *Config) read(path string) {
 	if strings.HasSuffix(c.Shell, "/tcsh") {
 		c.Shell += " -f"
 	}
+	wd := workDir()
 	if strings.HasPrefix(c.Command, "script.") {
-		c.Command = filepath.Dir(path) + "/" + c.Command
+		c.Command = wd + "/" + c.Command
 	}
 	c.Command = c.Shell + " " + c.Command
 }

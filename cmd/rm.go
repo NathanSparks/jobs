@@ -9,26 +9,26 @@ import (
 
 // Create the rm command
 var cmdRemove = &cobra.Command{
-	Use:   "rm",
-	Short: "Remove a Swif workflow",
+	Use:   "rm WORKFLOW",
+	Short: "Remove a workflow",
 	Long: `Remove a Swif workflow.
 
+Use "sw cancel WORKFLOW" to cancel a workflow without deleting it.
+
 Usage example:
-sw rm -w ana
+sw rm ana
 `,
 	Run: runRemove,
 }
 
 func init() {
 	cmdSW.AddCommand(cmdRemove)
-
-	cmdRemove.Flags().StringVarP(&workflow, "workflow", "w", "", "Swif workflow")
 }
 
 func runRemove(cmd *cobra.Command, args []string) {
-	if workflow == "" {
+	if len(args) != 1 {
 		fmt.Fprint(os.Stderr, "Please specify a Swif workflow to remove.\n")
 		os.Exit(2)
 	}
-	run("swif", "cancel", "-workflow "+workflow, "-delete")
+	run("swif", "cancel", "-workflow "+args[0], "-delete")
 }
