@@ -74,6 +74,9 @@ func (c *Config) config(d, id string) {
 	input := c.InputFilePrefix + id + c.InputFileSuffix
 	if c.JobPerDir {
 		input = c.InputDir
+		if strings.HasPrefix(input, "/mss/") {
+			input = strings.Replace(input, "/mss/", "/cache/", 1)
+		}
 	}
 	c.Command = strings.Replace(c.Command, "[input]", input, -1)
 	c.Command = strings.Replace(c.Command, "[jobID]", id, -1)

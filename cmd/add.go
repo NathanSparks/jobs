@@ -24,7 +24,7 @@ job tracks: debug, analysis, reconstruction, one_pass, simulation
 Usage examples:
 1. Create a new blank workflow called sim100.
     sw add sim100
-2. Add jobs to a workflow with JSON configuration file.
+2. Add jobs to a workflow by using a JSON configuration file.
     sw add -c config.json
 `,
 	Run: runAdd,
@@ -146,9 +146,7 @@ Run "sw help add" for usage details.`)
 		}
 	}
 
-	if !dryRun {
-		fmt.Printf("%d input files were found.\n", Nfiles)
-	}
+	fmt.Printf("%d input files were found in %d directories.\n", Nfiles, Ndirs)
 	if Ndirs == 0 {
 		fmt.Println("No jobs to add.")
 		os.Exit(0)
@@ -157,11 +155,11 @@ Run "sw help add" for usage details.`)
 	if c.JobPerDir {
 		Njobs = Ndirs
 	}
-	fmt.Printf("\n%d directories with input files were found.\nAverage of %v jobs/directory to add.\n", Ndirs, float32(Njobs)/float32(Ndirs))
+	fmt.Printf("Average of %v jobs/directory to add.\n", float32(Njobs)/float32(Ndirs))
 
 	if !dryRun && start {
 		fmt.Printf("Starting %s workflow ...\n", c.Workflow)
-		run("swif", "run", "-workflow "+c.Workflow)
+		run("swif", "run", "-workflow", c.Workflow)
 	}
 }
 
@@ -198,15 +196,26 @@ func (c Config) addJob(dirNo int, file, idp string) {
 		}
 	}
 
-	args := "add-job -create -workflow " + c.Workflow + " -project " + c.Project +
-		" -track " + c.Track + " -cores " + c.Cores + " -disk " + c.Disk + " -ram " + c.RAM +
-		" -time " + c.Time + " -os " + c.OS + " " + inputArg + " " + outputArg + " -stdout " +
-		c.Stdout + " -stderr " + c.Stderr + " -name " + c.Name + " " + c.Command
+	args := []string{"add-job", "-create", "-workflow", c.Workflow, "-project", c.Project, "-track", c.Track}
+	var opts []string
+	flags := []flg{{"-name", c.Name}, {"-cores", c.Cores}, {"-disk", c.Disk}, {"-ram", c.RAM}, {"-phase", c.Phase},
+		{"-time", c.Time}, {"-os", c.OS}, {"-stdout", c.Stdout}, {"-stderr", c.Stderr}}
+	for _, v := range flags {
+		opts = maybeAppend(opts, v)
+	}
+	if inputArg != "" {
+		opts = append(opts, strings.Split(inputArg, " ")...)
+	}
+	if outputArg != "" {
+		opts = append(opts, strings.Split(outputArg, " ")...)
+	}
+	opts = append(opts, strings.Split(c.Command, " ")...)
+	args = append(args, opts...)
 
 	if dryRun {
-		fmt.Println("swif " + args + "\n")
+		fmt.Println("swif " + strings.Join(args, " ") + "\n")
 	} else {
-		run("swif", args)
+		run("swif", args...)
 	}
 }
 
@@ -216,4 +225,18 @@ func toString(dirNo int, digits string) string {
 		s = fmt.Sprintf("%0"+digits+"s", s)
 	}
 	return s
+}
+
+func maybeAppend(a []string, b flg) []string {
+	var c []string
+	c = append(c, a...)
+	if b.val != "" {
+		c = append(c, []string{b.name, b.val}...)
+	}
+	return c
+}
+
+type flg struct {
+	name string
+	val  string
 }

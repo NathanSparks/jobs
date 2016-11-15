@@ -27,8 +27,9 @@ func init() {
 
 func runCancel(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprint(os.Stderr, "Please specify a Swif workflow to cancel.\n")
+		fmt.Fprintln(os.Stderr, `Required "workflow" argument is missing.
+Run "sw help cancel" for usage details.`)
 		os.Exit(2)
 	}
-	run("swif", "cancel", "-workflow "+args[0])
+	run("swif", "cancel", "-workflow", args[0])
 }

@@ -25,8 +25,9 @@ func init() {
 
 func runStart(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprint(os.Stderr, "Please specify a Swif workflow to start.\n")
+		fmt.Fprintln(os.Stderr, `Required "workflow" argument is missing.
+Run "sw help start" for usage details.`)
 		os.Exit(2)
 	}
-	run("swif", "run", "-workflow "+args[0])
+	run("swif", "run", "-workflow", args[0])
 }
