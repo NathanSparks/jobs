@@ -123,7 +123,7 @@ Run "sw help add" for usage details.`)
 			}
 			c.InputDir = strings.Replace(c0.InputDir, "[dirNo]", dirNo_str, -1)
 			fileNo := 0
-			inputArg, f0 := "", ""
+			inputArgs, f0 := "", ""
 			for _, file := range readDir(c.InputDir) {
 				if strings.HasPrefix(file, c.InputFilePrefix) &&
 					strings.HasSuffix(file, c.InputFileSuffix) &&
@@ -131,10 +131,10 @@ Run "sw help add" for usage details.`)
 					fileNo++
 					if fileNo == 1 {
 						Ndirs++
-						inputArg = "-input " + file + " " + idp + c.InputDir + "/" + file
+						inputArgs = "-input " + file + " " + idp + c.InputDir + "/" + file
 						f0 = file
 					} else {
-						inputArg = inputArg + " -input " + file + " " + idp + c.InputDir + "/" + file
+						inputArgs = inputArgs + " -input " + file + " " + idp + c.InputDir + "/" + file
 					}
 					Nfiles++
 				}
@@ -142,7 +142,7 @@ Run "sw help add" for usage details.`)
 			if fileNo == 0 {
 				continue
 			}
-			c.addJob(dirNo, f0, inputArg)
+			c.addJob(dirNo, f0, inputArgs)
 		}
 	}
 
@@ -155,7 +155,7 @@ Run "sw help add" for usage details.`)
 	if c.JobPerDir {
 		Njobs = Ndirs
 	}
-	fmt.Printf("Average of %v jobs/directory to add.\n", float32(Njobs)/float32(Ndirs))
+	fmt.Printf("%d jobs to add (Njobs/Ndirs = %v).\n", Njobs, float32(Njobs)/float32(Ndirs))
 
 	if !dryRun && start {
 		fmt.Printf("Starting %s workflow ...\n", c.Workflow)
@@ -174,25 +174,33 @@ func (c Config) addJob(dirNo int, file, idp string) {
 	}
 	c.config(ds, fid)
 
-	inputArg := ""
+	inputArgs := ""
 	if !c.JobPerDir {
-		inputArg = "-input " + file + " " + idp + c.InputDir + "/" + file
+		inputArgs = "-input " + file + " " + idp + c.InputDir + "/" + file
 	} else {
-		inputArg = idp
+		inputArgs = idp
 	}
 	for _, input := range c.Inputs {
-		if inputArg == "" {
-			inputArg = "-input " + input
+		if inputArgs == "" {
+			inputArgs = "-input " + input
 		} else {
-			inputArg = inputArg + " -input " + input
+			inputArgs = inputArgs + " -input " + input
 		}
 	}
-	outputArg := ""
+	outputArgs := ""
 	for _, output := range c.Outputs {
-		if outputArg == "" {
-			outputArg = "-output " + output
+		if outputArgs == "" {
+			outputArgs = "-output " + output
 		} else {
-			outputArg = outputArg + " -output " + output
+			outputArgs = outputArgs + " -output " + output
+		}
+	}
+	tagArgs := ""
+	for _, tag := range c.Tags {
+		if tagArgs == "" {
+			tagArgs = "-tag " + tag
+		} else {
+			tagArgs = tagArgs + " -tag " + tag
 		}
 	}
 
@@ -203,11 +211,14 @@ func (c Config) addJob(dirNo int, file, idp string) {
 	for _, v := range flags {
 		opts = maybeAppend(opts, v)
 	}
-	if inputArg != "" {
-		opts = append(opts, strings.Split(inputArg, " ")...)
+	if tagArgs != "" {
+		opts = append(opts, strings.Split(tagArgs, " ")...)
 	}
-	if outputArg != "" {
-		opts = append(opts, strings.Split(outputArg, " ")...)
+	if inputArgs != "" {
+		opts = append(opts, strings.Split(inputArgs, " ")...)
+	}
+	if outputArgs != "" {
+		opts = append(opts, strings.Split(outputArgs, " ")...)
 	}
 	opts = append(opts, strings.Split(c.Command, " ")...)
 	args = append(args, opts...)
