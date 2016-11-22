@@ -19,8 +19,12 @@ sw stop ana
 	Run: runStop,
 }
 
+var now bool
+
 func init() {
 	cmdSW.AddCommand(cmdStop)
+
+	cmdStop.Flags().BoolVarP(&now, "now", "n", false, "Cancel/recall running jobs")
 }
 
 func runStop(cmd *cobra.Command, args []string) {
@@ -29,5 +33,9 @@ func runStop(cmd *cobra.Command, args []string) {
 Run "sw help stop" for usage details.`)
 		os.Exit(2)
 	}
-	run("swif", "pause", "-workflow", args[0])
+	if now {
+		run("swif", "pause", "-workflow", args[0], "-now")
+	} else {
+		run("swif", "pause", "-workflow", args[0])
+	}
 }

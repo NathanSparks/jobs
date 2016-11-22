@@ -286,7 +286,7 @@ func maybeAppend(a []string, b flg) []string {
 	var c []string
 	c = append(c, a...)
 	if b.val != "" {
-		c = append(c, []string{b.name, b.val}...)
+		c = append(c, b.name, b.val)
 	}
 	return c
 }
