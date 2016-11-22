@@ -8,14 +8,15 @@ import (
 )
 
 type Config struct {
-	JobPerDir       bool     `json:"jobPerDir"`
+	JobPerRun       bool     `json:"jobPerRun"`
 	InputDir        string   `json:"inputDir"`
 	InputFilePrefix string   `json:"inputFilePrefix"`
 	InputFileSuffix string   `json:"inputFileSuffix"`
-	DirNoList       string   `json:"dirNoList"`
-	DirNoDigits     string   `json:"dirNoDigits"`
-	DirNoMin        int      `json:"dirNoMin"`
-	DirNoMax        int      `json:"dirNoMax"`
+	RunNoList       string   `json:"runNoList"`
+	RunNoDigits     string   `json:"runNoDigits"`
+	RunNoMin        int      `json:"runNoMin"`
+	RunNoMax        int      `json:"runNoMax"`
+	FileNoDigits    string   `json:"fileNoDigits"`
 	FileNoMin       int      `json:"fileNoMin"`
 	FileNoMax       int      `json:"fileNoMax"`
 	Workflow        string   `json:"workflow"`
@@ -52,19 +53,24 @@ func (c *Config) read(path string) {
 		c.Command = wd + "/" + c.Command
 	}
 	c.Command = c.Shell + " " + c.Command
+	if c.FileNoDigits == "" {
+		c.FileNoDigits = "3"
+	}
 }
 
 func (c *Config) config(d, id string) {
 	c.Name = strings.Replace(c.Name, "[jobID]", id, -1)
 	var inputs, outputs []string
 	for _, input := range c.Inputs {
-		input = strings.Replace(input, "[dirNo]", d, -1)
+		input = strings.Replace(input, "[runNo]", d, -1)
 		inputs = append(inputs, strings.Replace(input, "[jobID]", id, -1))
 	}
 	c.Inputs = inputs
 	for _, output := range c.Outputs {
-		if !c.JobPerDir {
-			output = strings.Replace(output, "[dirNo]", d, -1)
+		if !c.JobPerRun {
+			output = strings.Replace(output, "[runNo]", d, -1)
+		} else {
+			output = strings.Replace(output, "[runNo]", "perRun", -1)
 		}
 		outputs = append(outputs, strings.Replace(output, "[jobID]", id, -1))
 	}
@@ -72,7 +78,7 @@ func (c *Config) config(d, id string) {
 	c.Stdout = strings.Replace(c.Stdout, "[jobID]", id, -1)
 	c.Stderr = strings.Replace(c.Stderr, "[jobID]", id, -1)
 	input := c.InputFilePrefix + id + c.InputFileSuffix
-	if c.JobPerDir {
+	if c.JobPerRun {
 		input = c.InputDir
 		if strings.HasPrefix(input, "/mss/") {
 			input = strings.Replace(input, "/mss/", "/cache/", 1)

@@ -70,12 +70,12 @@ Run "sw help add" for usage details.`)
 		c.Workflow = args[0]
 	}
 
-	var dirNoList []string
-	if c.DirNoList != "" {
-		if isPath(c.DirNoList) {
-			dirNoList = strings.Split(readFile(c.DirNoList), "\n")
+	var runNoList []string
+	if c.RunNoList != "" {
+		if isPath(c.RunNoList) {
+			runNoList = strings.Split(readFile(c.RunNoList), "\n")
 		} else {
-			fmt.Fprintf(os.Stderr, "Path to directory-number list does not exist:\n%s\n", c.DirNoList)
+			fmt.Fprintf(os.Stderr, "Path to directory-number list does not exist:\n%s\n", c.RunNoList)
 			os.Exit(2)
 		}
 	}
@@ -92,70 +92,116 @@ Run "sw help add" for usage details.`)
 	}
 	c0 := c
 
-	Ndirs, Nfiles := 0, 0
-	switch c.JobPerDir {
-	case false:
-		for dirNo := c.DirNoMin; dirNo <= c.DirNoMax; dirNo++ {
-			dirNo_str := toString(dirNo, c.DirNoDigits)
-			if c.DirNoList != "" && !in(dirNoList, dirNo_str) {
+	Ndirs, Nfiles, Nruns := 0, 0, 0
+
+	switch {
+	case c.InputDir == "":
+		for runNo := c.RunNoMin; runNo <= c.RunNoMax; runNo++ {
+			runNo_str := toString(runNo, c.RunNoDigits)
+			if c.RunNoList != "" && !in(runNoList, runNo_str) {
 				continue
 			}
-			c.InputDir = strings.Replace(c0.InputDir, "[dirNo]", dirNo_str, -1)
-			fileNo := 0
-			for _, file := range readDir(c.InputDir) {
-				if strings.HasPrefix(file, c.InputFilePrefix) &&
-					strings.HasSuffix(file, c.InputFileSuffix) &&
-					fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
-					c.addJob(dirNo, file, idp)
-					fileNo++
-					if fileNo == 1 {
-						Ndirs++
-					}
+			Nruns++
+			if c.JobPerRun {
+				Nfiles++
+				c.addJob(runNo_str, runNo_str, "")
+			} else {
+				for fileNo := c.FileNoMin; fileNo <= c.FileNoMax; fileNo++ {
+					fileNo_str := toString(fileNo, c.FileNoDigits)
+					file := runNo_str + "_" + fileNo_str
 					Nfiles++
+					c.addJob(runNo_str, file, "")
 				}
 			}
 		}
-	case true:
-		for dirNo := c.DirNoMin; dirNo <= c.DirNoMax; dirNo++ {
-			dirNo_str := toString(dirNo, c.DirNoDigits)
-			if c.DirNoList != "" && !in(dirNoList, dirNo_str) {
-				continue
-			}
-			c.InputDir = strings.Replace(c0.InputDir, "[dirNo]", dirNo_str, -1)
-			fileNo := 0
-			inputArgs, f0 := "", ""
-			for _, file := range readDir(c.InputDir) {
-				if strings.HasPrefix(file, c.InputFilePrefix) &&
-					strings.HasSuffix(file, c.InputFileSuffix) &&
-					fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
-					fileNo++
-					if fileNo == 1 {
-						Ndirs++
-						inputArgs = "-input " + file + " " + idp + c.InputDir + "/" + file
-						f0 = file
-					} else {
-						inputArgs = inputArgs + " -input " + file + " " + idp + c.InputDir + "/" + file
+		fmt.Printf("Nruns: %d\n", Nruns)
+	default:
+		var files []string
+		sd := false
+		if !strings.Contains(c.InputDir, "[runNo]") {
+			sd = true
+			Ndirs = 1
+			files = readDir(c.InputDir)
+		}
+		switch c.JobPerRun {
+		case false:
+			for runNo := c.RunNoMin; runNo <= c.RunNoMax; runNo++ {
+				runNo_str := toString(runNo, c.RunNoDigits)
+				if c.RunNoList != "" && !in(runNoList, runNo_str) {
+					continue
+				}
+				if !sd {
+					c.InputDir = strings.Replace(c0.InputDir, "[runNo]", runNo_str, -1)
+					files = readDir(c.InputDir)
+				}
+				fileNo := 0
+				for _, file := range files {
+					if strings.HasPrefix(file, c.InputFilePrefix) &&
+						strings.HasSuffix(file, c.InputFileSuffix) &&
+						fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
+						if sd && !strings.Contains(file, runNo_str) {
+							continue
+						}
+						c.addJob(runNo_str, file, idp)
+						fileNo++
+						if fileNo == 1 {
+							Nruns++
+						}
+						Nfiles++
 					}
-					Nfiles++
 				}
 			}
-			if fileNo == 0 {
-				continue
+		case true:
+			for runNo := c.RunNoMin; runNo <= c.RunNoMax; runNo++ {
+				runNo_str := toString(runNo, c.RunNoDigits)
+				if c.RunNoList != "" && !in(runNoList, runNo_str) {
+					continue
+				}
+				if !sd {
+					c.InputDir = strings.Replace(c0.InputDir, "[runNo]", runNo_str, -1)
+					files = readDir(c.InputDir)
+				}
+				fileNo := 0
+				inputArgs, f0 := "", ""
+				for _, file := range files {
+					if strings.HasPrefix(file, c.InputFilePrefix) &&
+						strings.HasSuffix(file, c.InputFileSuffix) &&
+						fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
+						if sd && !strings.Contains(file, runNo_str) {
+							continue
+						}
+						fileNo++
+						if fileNo == 1 {
+							Nruns++
+							inputArgs = "-input " + file + " " + idp + c.InputDir + "/" + file
+							f0 = file
+						} else {
+							inputArgs = inputArgs + " -input " + file + " " + idp + c.InputDir + "/" + file
+						}
+						Nfiles++
+					}
+				}
+				if fileNo == 0 {
+					continue
+				}
+				c.addJob(runNo_str, f0, inputArgs)
 			}
-			c.addJob(dirNo, f0, inputArgs)
 		}
+		if !sd {
+			Ndirs = Nruns
+		}
+		fmt.Printf("%d input files were found for %d runs in %d directories.\n", Nfiles, Nruns, Ndirs)
 	}
 
-	fmt.Printf("%d input files were found in %d directories.\n", Nfiles, Ndirs)
-	if Ndirs == 0 {
+	if Nfiles == 0 {
 		fmt.Println("No jobs to add.")
 		os.Exit(0)
 	}
 	Njobs := Nfiles
-	if c.JobPerDir {
-		Njobs = Ndirs
+	if c.JobPerRun {
+		Njobs = Nruns
 	}
-	fmt.Printf("%d jobs to add (Njobs/Ndirs = %v).\n", Njobs, float32(Njobs)/float32(Ndirs))
+	fmt.Printf("%d jobs to add (Njobs/Nruns = %v).\n", Njobs, float32(Njobs)/float32(Nruns))
 
 	if !dryRun && start {
 		fmt.Printf("Starting %s workflow ...\n", c.Workflow)
@@ -163,19 +209,17 @@ Run "sw help add" for usage details.`)
 	}
 }
 
-func (c Config) addJob(dirNo int, file, idp string) {
+func (c Config) addJob(runNo, file, idp string) {
 	fid := strings.TrimPrefix(file, c.InputFilePrefix)
 	fid = strings.TrimSuffix(fid, c.InputFileSuffix)
 
-	ds := toString(dirNo, c.DirNoDigits)
-
-	if c.JobPerDir {
-		fid = ds
+	if c.JobPerRun {
+		fid = runNo
 	}
-	c.config(ds, fid)
+	c.config(runNo, fid)
 
 	inputArgs := ""
-	if !c.JobPerDir {
+	if !c.JobPerRun && c.InputDir != "" {
 		inputArgs = "-input " + file + " " + idp + c.InputDir + "/" + file
 	} else {
 		inputArgs = idp
@@ -230,8 +274,8 @@ func (c Config) addJob(dirNo int, file, idp string) {
 	}
 }
 
-func toString(dirNo int, digits string) string {
-	s := strconv.Itoa(dirNo)
+func toString(n int, digits string) string {
+	s := strconv.Itoa(n)
 	if digits != "" {
 		s = fmt.Sprintf("%0"+digits+"s", s)
 	}
