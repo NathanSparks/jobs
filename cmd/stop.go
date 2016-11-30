@@ -29,8 +29,9 @@ func init() {
 
 func runStop(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, `Required "workflow" argument is missing.
-Run "sw help stop" for usage details.`)
+		fmt.Fprintln(os.Stderr, `Required workflow argument is missing.
+
+Run "sw stop -h" for usage details.`)
 		os.Exit(2)
 	}
 	if now {

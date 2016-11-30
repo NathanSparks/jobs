@@ -31,8 +31,9 @@ func init() {
 
 func runStart(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, `Required "workflow" argument is missing.
-Run "sw help start" for usage details.`)
+		fmt.Fprintln(os.Stderr, `Required workflow argument is missing.
+
+Run "sw start -h" for usage details.`)
 		os.Exit(2)
 	}
 	var opts []string

@@ -44,7 +44,8 @@ func init() {
 func runAdd(cmd *cobra.Command, args []string) {
 	if len(args) == 0 && config_file == "" {
 		fmt.Fprintln(os.Stderr, `"sw add" requires a workflow as an argument and/or the "-c" option.
-Run "sw help add" for usage details.`)
+
+Run "sw add -h" for usage details.`)
 		os.Exit(2)
 	}
 	if len(args) > 0 && config_file == "" {
@@ -52,8 +53,9 @@ Run "sw help add" for usage details.`)
 		return
 	}
 	if config_file == "" {
-		fmt.Fprintln(os.Stderr, `Please use the "-c" option to specify the JSON config file.
-Run "sw help add" for usage details.`)
+		fmt.Fprintln(os.Stderr, `Use the "-c" option to specify a JSON config file.
+
+Run "sw add -h" for usage details.`)
 		os.Exit(2)
 	}
 

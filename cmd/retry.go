@@ -29,13 +29,15 @@ func init() {
 
 func runRetry(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, `Required "workflow" argument is missing, or quotes are not enclosing multiple problems.
-Run "sw help retry" for usage details.`)
+		fmt.Fprintln(os.Stderr, `Required workflow argument is missing, or quotes are not enclosing multiple problems.
+
+Run "sw retry -h" for usage details.`)
 		os.Exit(2)
 	}
 	if problems == nil {
 		fmt.Fprintln(os.Stderr, `Required "--problems" flag is missing.
-Run "sw help retry" for usage details.`)
+
+Run "sw retry -h" for usage details.`)
 		os.Exit(2)
 	}
 	swifArgs := []string{"retry-jobs", "-workflow", args[0], "-problems"}

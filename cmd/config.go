@@ -53,6 +53,9 @@ func (c *Config) read(path string) {
 		c.Command = wd + "/" + c.Command
 	}
 	c.Command = c.Shell + " " + c.Command
+	if c.RunNoDigits == "" {
+		c.RunNoDigits = "6"
+	}
 	if c.FileNoDigits == "" {
 		c.FileNoDigits = "3"
 	}
@@ -70,7 +73,7 @@ func (c *Config) config(d, id string) {
 		if !c.JobPerRun {
 			output = strings.Replace(output, "[runNo]", d, -1)
 		} else {
-			output = strings.Replace(output, "[runNo]", "perRun", -1)
+			output = strings.Replace(output, "[runNo]", "byRun", -1)
 		}
 		outputs = append(outputs, strings.Replace(output, "[jobID]", id, -1))
 	}

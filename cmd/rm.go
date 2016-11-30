@@ -27,8 +27,9 @@ func init() {
 
 func runRemove(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, `Required "workflow" argument is missing.
-Run "sw help rm" for usage details.`)
+		fmt.Fprintln(os.Stderr, `Required workflow argument is missing.
+
+Run "sw rm -h" for usage details.`)
 		os.Exit(2)
 	}
 	run("swif", "cancel", "-workflow", args[0], "-delete")
