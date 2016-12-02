@@ -17,16 +17,20 @@ var cmdAdd = &cobra.Command{
 
 The workflow is created if it does not already exist.
 
-A JSON config file is used to configure the workflow.
-
-job tracks: debug, analysis, reconstruction, one_pass, simulation
-
-Usage examples:
-1. Create a new blank workflow called sim100.
+A JSON config file is used to configure the workflow.`,
+	Example: `1. Create a new blank workflow called sim100.
     sw add sim100
 2. Add jobs to a workflow by using a JSON configuration file.
     sw add -c config.json
-`,
+
+Most of the config file fields correspond to "swif add-job" options.
+Run "swif add-job -help" for details on those options.
+
+job tracks: debug, analysis, reconstruction, one_pass, simulation
+
+More info: 
+  https://scicomp.jlab.org/docs/batch
+  https://scicomp.jlab.org/docs/swif`,
 	Run: runAdd,
 }
 
@@ -43,9 +47,8 @@ func init() {
 
 func runAdd(cmd *cobra.Command, args []string) {
 	if len(args) == 0 && config_file == "" {
-		fmt.Fprintln(os.Stderr, `"sw add" requires a workflow as an argument and/or the "-c" option.
-
-Run "sw add -h" for usage details.`)
+		fmt.Fprintln(os.Stderr, "Required workflow argument and/or the -c option is missing.\n")
+		cmd.Usage()
 		os.Exit(2)
 	}
 	if len(args) > 0 && config_file == "" {
@@ -53,9 +56,8 @@ Run "sw add -h" for usage details.`)
 		return
 	}
 	if config_file == "" {
-		fmt.Fprintln(os.Stderr, `Use the "-c" option to specify a JSON config file.
-
-Run "sw add -h" for usage details.`)
+		fmt.Fprintln(os.Stderr, "Use the -c option to specify a JSON config file.\n")
+		cmd.Usage()
 		os.Exit(2)
 	}
 

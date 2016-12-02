@@ -11,11 +11,9 @@ import (
 var cmdRetry = &cobra.Command{
 	Use:   "retry WORKFLOW",
 	Short: "Retry problem jobs of a workflow",
-	Long: `Retry problem jobs of a Swif workflow.
-
-Usage example:
-sw retry ana -p "SWIF-SYSTEM-ERROR AUGER-TIMEOUT"
-`,
+	Long:  `Retry problem jobs of a Swif workflow.`,
+	Example: `1. sw retry ana -p "SWIF-SYSTEM-ERROR AUGER-TIMEOUT"
+2. sw retry my-workflow -p SWIF-SYSTEM-ERROR`,
 	Run: runRetry,
 }
 
@@ -29,15 +27,13 @@ func init() {
 
 func runRetry(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, `Required workflow argument is missing, or quotes are not enclosing multiple problems.
-
-Run "sw retry -h" for usage details.`)
+		fmt.Fprintln(os.Stderr, "Required workflow argument is missing, or quotes are not enclosing multiple problems.\n")
+		cmd.Usage()
 		os.Exit(2)
 	}
 	if problems == nil {
-		fmt.Fprintln(os.Stderr, `Required "--problems" flag is missing.
-
-Run "sw retry -h" for usage details.`)
+		fmt.Fprintln(os.Stderr, "Required --problems flag is missing.\n")
+		cmd.Usage()
 		os.Exit(2)
 	}
 	swifArgs := []string{"retry-jobs", "-workflow", args[0], "-problems"}

@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 )
 
@@ -11,11 +8,9 @@ import (
 var cmdStart = &cobra.Command{
 	Use:   "start WORKFLOW",
 	Short: "Start/resume a workflow",
-	Long: `Start/resume a Swif workflow.
-
-Usage example:
-sw start ana
-`,
+	Long:  `Start/resume a Swif workflow.`,
+	Example: `1. sw start my-workflow
+2. sw start ana`,
 	Run: runStart,
 }
 
@@ -31,10 +26,7 @@ func init() {
 
 func runStart(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, `Required workflow argument is missing.
-
-Run "sw start -h" for usage details.`)
-		os.Exit(2)
+		exitNoWorkflow(cmd)
 	}
 	var opts []string
 	if joblimit != "" {

@@ -10,9 +10,7 @@ import (
 var cmdSW = &cobra.Command{
 	Use:   "sw [COMMAND] [ARGS]",
 	Short: "A tool for managing Swif workflows",
-	Long: `
-sw is a tool for managing Swif workflows.
-`,
+	Long:  `sw is a tool for managing Swif workflows.`,
 }
 
 // Execute a sw command

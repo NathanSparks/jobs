@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 )
 
@@ -11,11 +8,9 @@ import (
 var cmdStop = &cobra.Command{
 	Use:   "stop WORKFLOW",
 	Short: "Stop (pause) a workflow",
-	Long: `Stop (pause) a Swif workflow.
-
-Usage example:
-sw stop ana
-`,
+	Long:  `Stop (pause) a Swif workflow.`,
+	Example: `1. sw stop my-workflow
+2. sw stop ana`,
 	Run: runStop,
 }
 
@@ -29,10 +24,7 @@ func init() {
 
 func runStop(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, `Required workflow argument is missing.
-
-Run "sw stop -h" for usage details.`)
-		os.Exit(2)
+		exitNoWorkflow(cmd)
 	}
 	if now {
 		run("swif", "pause", "-workflow", args[0], "-now")

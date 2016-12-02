@@ -10,10 +10,8 @@ import (
 var cmdVersion = &cobra.Command{
 	Use:   "version",
 	Short: "Show the sw version number",
-	Long: `
-Show the sw version number.
-`,
-	Run: runVersion,
+	Long:  `Show the sw version number.`,
+	Run:   runVersion,
 }
 
 const VERSION = "dev"
