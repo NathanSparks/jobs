@@ -26,10 +26,29 @@ A JSON config file is used to configure the workflow.`,
 Most of the config file fields correspond to "swif add-job" options.
 Run "swif add-job -help" for details on those options.
 
+If jobPerRun is false: Add one job per input file.
+If jobPerRun is true : Add one job per run (multiple input files).
+
+If jobPerRun is true and the input files are not from the tape library,
+sw does not pass them to Auger to copy. The job script should copy the
+input files to the local disk of the compute node for efficient I/O.
+This choice allows the same simple script to be used for both types of
+input: tape ("/mss/...") and non-tape ("/cache/...", etc.).
+
+Generic [input] script argument
+If jobPerRun is false: [input] = input filename
+If jobPerRun is true : [input] = input directory
+
+The job ID is determined from the allowed input filename forms: 
+${PREFIX}${RUNNO}_${FILENO}${SUFFIX} or ${PREFIX}${RUNNO}${SUFFIX}
+1. If jobPerRun is false: [jobID] = ${RUNNO}_${FILENO} or ${RUNNO}
+2. If jobPerRun is true : [jobID] = ${RUNNO}
+
 job tracks: debug, analysis, reconstruction, one_pass, simulation
 
-More info: 
+More info:
   https://scicomp.jlab.org/docs/batch
+  https://scicomp.jlab.org/docs/batch_job_faq
   https://scicomp.jlab.org/docs/swif`,
 	Run: runAdd,
 }
@@ -177,9 +196,11 @@ func runAdd(cmd *cobra.Command, args []string) {
 						fileNo++
 						if fileNo == 1 {
 							Nruns++
-							inputArgs = "-input " + file + " " + idp + c.InputDir + "/" + file
+							if idp == "mss:" {
+								inputArgs = "-input " + file + " " + idp + c.InputDir + "/" + file
+							}
 							f0 = file
-						} else {
+						} else if idp == "mss:" {
 							inputArgs = inputArgs + " -input " + file + " " + idp + c.InputDir + "/" + file
 						}
 						Nfiles++
