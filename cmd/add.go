@@ -157,17 +157,19 @@ func runAdd(cmd *cobra.Command, args []string) {
 					c.InputDir = strings.Replace(c0.InputDir, "[runNo]", runNo_str, -1)
 					files = readDir(c.InputDir)
 				}
-				fileNo := 0
+				fileNo := -1
 				for _, file := range files {
 					if strings.HasPrefix(file, c.InputFilePrefix) &&
-						strings.HasSuffix(file, c.InputFileSuffix) &&
-						fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
+						strings.HasSuffix(file, c.InputFileSuffix) {
+						fileNo++
+						if fileNo < c.FileNoMin || fileNo > c.FileNoMax {
+							continue
+						}
 						if sd && !strings.Contains(file, runNo_str) {
 							continue
 						}
 						c.addJob(runNo_str, file, idp)
-						fileNo++
-						if fileNo == 1 {
+						if fileNo == c.FileNoMin {
 							Nruns++
 						}
 						Nfiles++
@@ -184,17 +186,19 @@ func runAdd(cmd *cobra.Command, args []string) {
 					c.InputDir = strings.Replace(c0.InputDir, "[runNo]", runNo_str, -1)
 					files = readDir(c.InputDir)
 				}
-				fileNo := 0
+				fileNo := -1
 				inputArgs, f0 := "", ""
 				for _, file := range files {
 					if strings.HasPrefix(file, c.InputFilePrefix) &&
-						strings.HasSuffix(file, c.InputFileSuffix) &&
-						fileNo >= c.FileNoMin && fileNo <= c.FileNoMax {
+						strings.HasSuffix(file, c.InputFileSuffix) {
+						fileNo++
+						if fileNo < c.FileNoMin || fileNo > c.FileNoMax {
+							continue
+						}
 						if sd && !strings.Contains(file, runNo_str) {
 							continue
 						}
-						fileNo++
-						if fileNo == 1 {
+						if fileNo == c.FileNoMin {
 							Nruns++
 							if idp == "mss:" {
 								inputArgs = "-input " + file + " " + idp + c.InputDir + "/" + file
@@ -206,7 +210,7 @@ func runAdd(cmd *cobra.Command, args []string) {
 						Nfiles++
 					}
 				}
-				if fileNo == 0 {
+				if fileNo == -1 {
 					continue
 				}
 				c.addJob(runNo_str, f0, inputArgs)

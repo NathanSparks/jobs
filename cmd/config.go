@@ -59,6 +59,12 @@ func (c *Config) read(path string) {
 	if c.FileNoDigits == "" {
 		c.FileNoDigits = "3"
 	}
+	if c.FileNoMin < 0 {
+		c.FileNoMin = 0
+	}
+	if c.FileNoMax < 0 {
+		c.FileNoMax = 999
+	}
 }
 
 func (c *Config) config(d, id string) {
