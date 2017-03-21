@@ -96,7 +96,10 @@ func runAdd(cmd *cobra.Command, args []string) {
 	var runNoList []string
 	if c.RunNoList != "" {
 		if isPath(c.RunNoList) {
-			runNoList = strings.Split(readFile(c.RunNoList), "\n")
+			for _, rs := range strings.Split(readFile(c.RunNoList), "\n") {
+				rs = fmt.Sprintf("%0"+c.RunNoDigits+"s", rs)
+				runNoList = append(runNoList, rs)
+			}
 		} else {
 			fmt.Fprintf(os.Stderr, "Path to directory-number list does not exist:\n%s\n", c.RunNoList)
 			os.Exit(2)
